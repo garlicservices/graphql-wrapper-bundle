@@ -1,0 +1,27 @@
+{
+  "name": "garlic/graphql-wrapper",
+  "description": "GraphQL wrapper bundle uses for communication among microservices through message bus (by default is RabbitMQ)",
+  "keywords": ["Wrapper", "GraphQL", "Microservices"],
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "Maksym Churkyn",
+      "email": "imaximius@gmail.com"
+    }
+  ],
+  "type": "symfony-bundle",
+  "autoload": {
+    "psr-4": {
+      "Garlic\\Bus\\": ""
+    }
+  },
+  "require": {
+    "php": ">=7.1",
+    "garlic/bus": "1.*",
+    "jms/serializer-bundle": "^2.3",
+    "enqueue/enqueue-bundle": "^0.8",
+    "enqueue/amqp-ext": "^0.8",
+    "dflydev/dot-access-data": "^2.0",
+    "ext-json": "*"
+  }
+}

@@ -1,0 +1,7 @@
+services:
+    _defaults:
+        autowire: true
+        autoconfigure: true
+        public: false
+    Garlic\Wrapper\Service\:
+        resource: '../../Service/*'
