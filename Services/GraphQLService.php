@@ -12,35 +12,33 @@ use Garlic\Wrapper\Service\GraphQL\Mutation\UpdateMutationBuilder;
 use Garlic\Wrapper\Service\GraphQL\Query\QueryBuilder;
 use Garlic\Wrapper\Service\GraphQL\QueryHelper;
 use Garlic\Wrapper\Service\GraphQL\QueryRelation;
-use Garlic\Bus\Service\Pool\QueryPoolService;
+use Garlic\Bus\Service\Pool\CommunicationPoolService;
 use Garlic\Bus\Service\CommunicatorService;
-
 use Interop\Amqp\Impl\AmqpMessage;
 
 class GraphQLService extends QueryHelper
 {
     /** @var array */
     private $requests = [];
-    
+
     /** @var CommunicatorService CommunicatorService */
     private $communicatorService;
+    /** @var CommunicationPoolService */
+    private $communicatorPoolService;
 
-    /** @var QueryPoolService QueryPoolService */
-    private $queryPoolService;
-    
     /**
      * GraphQLService constructor.
      * @param CommunicatorService $communicatorService
-     * @param QueryPoolService $queryPoolService
+     * @param CommunicationPoolService $communicatorPoolService
      */
     public function __construct(
         CommunicatorService $communicatorService,
-        QueryPoolService $queryPoolService
+        CommunicationPoolService $communicatorPoolService
     ) {
         $this->communicatorService = $communicatorService;
-        $this->queryPoolService = $queryPoolService;
+        $this->communicatorPoolService = $communicatorPoolService;
     }
-    
+
     /**
      * Create query builder
      *
@@ -52,10 +50,10 @@ class GraphQLService extends QueryHelper
     {
         $meta = $this->parsQueryName($from);
         $this->requests[$meta['service']][$meta['query']] = new QueryBuilder($meta['query']);
-        
+
         return $this->requests[$meta['service']][$meta['query']];
     }
-    
+
     /**
      * Create mutation builder
      *
@@ -67,10 +65,10 @@ class GraphQLService extends QueryHelper
     {
         $meta = $this->parsQueryName($from);
         $this->requests[$meta['service']][$meta['query']] = new MutationBuilder($meta['query']);
-    
+
         return $this->requests[$meta['service']][$meta['query']];
     }
-    
+
     /**
      * Create mutation builder for inserting new row
      *
@@ -82,10 +80,10 @@ class GraphQLService extends QueryHelper
     {
         $meta = $this->parsQueryName($from);
         $this->requests[$meta['service']][$meta['query']] = new CreateMutationBuilder($meta['query']);
-    
+
         return $this->requests[$meta['service']][$meta['query']];
     }
-    
+
     /**
      * Create mutation builder for updating rows
      *
@@ -97,10 +95,10 @@ class GraphQLService extends QueryHelper
     {
         $meta = $this->parsQueryName($from);
         $this->requests[$meta['service']][$meta['query']] = new UpdateMutationBuilder($meta['query']);
-    
+
         return $this->requests[$meta['service']][$meta['query']];
     }
-    
+
     /**
      * Create mutation builder for deleting rows
      *
@@ -112,34 +110,30 @@ class GraphQLService extends QueryHelper
     {
         $meta = $this->parsQueryName($from);
         $this->requests[$meta['service']][$meta['query']] = new DeleteMutationBuilder($meta['query']);
-    
+
         return $this->requests[$meta['service']][$meta['query']];
     }
 
     /**
      * Sending queries into Bus and returning Promises for post-process
-     *
+     * TODO : update result stitch
      * @return mixed
      * @throws \ReflectionException
      */
     public function fetchAsync()
     {
+        $pool = $this->communicatorService->createPool();
         foreach ($this->requests as $serviceName => $request) {
             /** @var QueryBuilder $query */
+
             foreach ($request as $queryName => $query) {
-                $service = $this->communicatorService->request($serviceName);
-
-                $promise = $service->sendAsync('graphql', [], ['query' => (string)$query]);
-
-                $this->queryPoolService->addAsyncQuery($query, $serviceName, $promise);
+                $pool->send($serviceName, 'graphql', ['query' => (string)$query], []);
             }
         }
 
-        $this->queryPoolService->resolve();
-
-        return $this->stitchQueries();
+        return $pool->fetch();
     }
-    
+
     /**
      * Execute queries and returns received data
      *
@@ -153,16 +147,16 @@ class GraphQLService extends QueryHelper
                 /** @var CommunicatorService::__call('graphql'), ... */
                 ->graphql([], ['query' => implode("\n", $request)])
                 ->getData();
-            
+
             /** @var QueryBuilder $query */
             foreach ($request as $queryName => $query) {
                 $query->setResult((!empty($result['data'])) ? $result['data'][$queryName] : null);
             }
         }
-        
+
         return $this->stitchQueries();
     }
-    
+
     /**
      * Stitch queries to each other by stitch rules
      *
@@ -177,14 +171,14 @@ class GraphQLService extends QueryHelper
                 if (count($query->getStitched()) > 0) {
                     $this->bindRelations($query);
                 }
-                
+
                 $result[$serviceName]['data'][$queryName] = $query->getArrayResult();
             }
         }
-        
+
         return $result;
     }
-    
+
     /**
      * Bind relation value to the query
      *
@@ -195,38 +189,38 @@ class GraphQLService extends QueryHelper
     {
         $queryDataResults = $query->getResult();
         $queryArrayResults = $query->getArrayResult();
-        if($this->checkResultIsObject($queryArrayResults)) {
+        if ($this->checkResultIsObject($queryArrayResults)) {
             $queryArrayResults = [$queryArrayResults];
         }
-        
+
         /** @var QueryRelation $relation */
         foreach ($query->getStitched() as $relation) {
             $relationDataResults = $relation->getQuery()->getResult();
             $relationArrayResults = $relation->getQuery()->getArrayResult();
-            if($this->checkResultIsObject($relationArrayResults)) {
+            if ($this->checkResultIsObject($relationArrayResults)) {
                 $relationArrayResults = [$relationArrayResults];
             }
-            
+
             foreach ($queryArrayResults as $queryKey => $queryArrayResult) {
                 $queryRelationValue = $queryDataResults->get($queryKey.'.'.$relation->getCurrent());
 
                 foreach ($relationArrayResults as $relationKey => $relationArrayResult) {
                     $relationValue = $relationDataResults->get($relationKey.'.'.$relation->getTarget());
-                    
-                    $type = ($relation->getType() == QueryRelation::TYPE_ONE) ? "set": "append";
-                    if($queryRelationValue == $relationValue) {
+
+                    $type = ($relation->getType() == QueryRelation::TYPE_ONE) ? "set" : "append";
+                    if ($queryRelationValue == $relationValue) {
                         $queryDataResults->{$type}(
                             $queryKey.'.'.$relation->getAlias(),
                             $relationArrayResult
                         );
                     }
                 }
-                
+
             }
         }
-    
+
         $query->setResult($queryDataResults->export());
-        
+
         return $query->getResult()->export();
     }
 }
