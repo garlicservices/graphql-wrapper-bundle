@@ -23,20 +23,15 @@ class GraphQLService extends QueryHelper
 
     /** @var CommunicatorService CommunicatorService */
     private $communicatorService;
-    /** @var CommunicationPoolService */
-    private $communicatorPoolService;
 
     /**
      * GraphQLService constructor.
      * @param CommunicatorService $communicatorService
-     * @param CommunicationPoolService $communicatorPoolService
      */
     public function __construct(
-        CommunicatorService $communicatorService,
-        CommunicationPoolService $communicatorPoolService
+        CommunicatorService $communicatorService
     ) {
         $this->communicatorService = $communicatorService;
-        $this->communicatorPoolService = $communicatorPoolService;
     }
 
     /**
@@ -115,23 +110,30 @@ class GraphQLService extends QueryHelper
     }
 
     /**
-     * Sending queries into Bus and returning Promises for post-process
-     * TODO : update result stitch
+     * Execute async queries and returns received data
+     *
      * @return mixed
-     * @throws \ReflectionException
      */
     public function fetchAsync()
     {
-        $pool = $this->communicatorService->createPool();
         foreach ($this->requests as $serviceName => $request) {
             /** @var QueryBuilder $query */
-
             foreach ($request as $queryName => $query) {
-                $pool->send($serviceName, 'graphql', ['query' => (string)$query], []);
+                $this->communicatorService->pool($serviceName, 'graphql', [], ['query' => (string)$query]);
+            }
+        }
+        $result = $this->communicatorService->fetch();
+
+        foreach ($this->requests as $serviceName => $request) {
+            /** @var QueryBuilder $query */
+            foreach ($request as $queryName => $query) {
+                $query->setResult(
+                    isset($result['data'][$serviceName][$queryName]) ? $result['data'][$serviceName][$queryName] : null
+                );
             }
         }
 
-        return $pool->fetch();
+        return $this->stitchQueries();
     }
 
     /**
@@ -172,7 +174,7 @@ class GraphQLService extends QueryHelper
                     $this->bindRelations($query);
                 }
 
-                $result[$serviceName]['data'][$queryName] = $query->getArrayResult();
+                $result['data'][$serviceName][$queryName] = $query->getArrayResult();
             }
         }
 

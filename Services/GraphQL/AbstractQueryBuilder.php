@@ -4,22 +4,21 @@ namespace Garlic\Wrapper\Service\GraphQL;
 
 use Dflydev\DotAccessData\Data;
 use Garlic\Wrapper\Service\GraphQL\Exceptions\GraphQLQueryException;
-use Garlic\Wrapper\Service\GraphQL\Query\QueryBuilder;
 
 abstract class AbstractQueryBuilder extends QueryGenerator
 {
     /** @var string */
     protected $query;
-    
+
     /** @var array */
     protected $fields = [];
-    
-    /** @var array  */
+
+    /** @var array */
     protected $stitches = [];
-    
+
     /** @var string */
     protected $result;
-    
+
     /**
      * QueryBuilder constructor.
      * @param string $query
@@ -28,7 +27,7 @@ abstract class AbstractQueryBuilder extends QueryGenerator
     {
         $this->query = $query;
     }
-    
+
     /**
      * Add query fields to select
      *
@@ -39,10 +38,10 @@ abstract class AbstractQueryBuilder extends QueryGenerator
     {
         $selects = is_array($select) ? $select : func_get_args();
         $this->fields = $this->prepareFields($selects);
-        
+
         return $this;
     }
-    
+
     /**
      * Set current query name
      *
@@ -52,10 +51,10 @@ abstract class AbstractQueryBuilder extends QueryGenerator
     public function from($name)
     {
         $this->query = $name;
-        
+
         return $this;
     }
-    
+
     /**
      * Stitch a query to the current query
      *
@@ -72,19 +71,19 @@ abstract class AbstractQueryBuilder extends QueryGenerator
         string $current,
         string $target,
         int $type = QueryRelation::TYPE_ONE
-    ){
+    ) {
         $relation = new QueryRelation();
         $relation->setQuery($query)
             ->setAlias($alias)
             ->setCurrent($current)
             ->setTarget($target)
             ->setType($type);
-        
+
         $this->stitches[] = $relation;
-        
+
         return $this;
     }
-    
+
     /**
      * Make One to One relation between queries
      * Stitch first found result
@@ -100,10 +99,10 @@ abstract class AbstractQueryBuilder extends QueryGenerator
         string $alias,
         string $currentField,
         string $targetField
-    ){
+    ) {
         return $this->stitch($query, $alias, $currentField, $targetField, QueryRelation::TYPE_ONE);
     }
-    
+
     /**
      * Make One to Many relation between queries
      * Stitch list of results
@@ -122,7 +121,7 @@ abstract class AbstractQueryBuilder extends QueryGenerator
     ) {
         return $this->stitch($query, $alias, $currentField, $targetField, QueryRelation::TYPE_MANY);
     }
-    
+
     /**
      * Returns list of stitched queries
      *
@@ -132,7 +131,7 @@ abstract class AbstractQueryBuilder extends QueryGenerator
     {
         return $this->stitches;
     }
-    
+
     /**
      * Set query result
      *
@@ -145,7 +144,7 @@ abstract class AbstractQueryBuilder extends QueryGenerator
         
         return $this;
     }
-    
+
     /**
      * Get "dot path" oriented result
      * Example of path: parentArrayKey.childArrayKey
@@ -156,7 +155,7 @@ abstract class AbstractQueryBuilder extends QueryGenerator
     {
         return new Data($this->result);
     }
-    
+
     /**
      * Return query result as array
      *
@@ -166,7 +165,7 @@ abstract class AbstractQueryBuilder extends QueryGenerator
     {
         return $this->result;
     }
-    
+
     /**
      * Return query name as string
      *
@@ -176,7 +175,7 @@ abstract class AbstractQueryBuilder extends QueryGenerator
     {
         return $this->query;
     }
-    
+
     /**
      * Create query as a string
      *
@@ -184,7 +183,7 @@ abstract class AbstractQueryBuilder extends QueryGenerator
      * @throws GraphQLQueryException
      */
     abstract public function getQuery(): string;
-    
+
     /**
      * Return object as string
      *
