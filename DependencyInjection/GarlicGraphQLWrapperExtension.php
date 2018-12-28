@@ -13,7 +13,7 @@ use Symfony\Component\DependencyInjection\Loader;
  *
  * @link http://symfony.com/doc/current/cookbook/bundles/extension.html
  */
-class GarlicWrapperExtension extends Extension implements PrependExtensionInterface
+class GarlicGraphQLWrapperExtension extends Extension implements PrependExtensionInterface
 {
     /**
      * {@inheritdoc}
