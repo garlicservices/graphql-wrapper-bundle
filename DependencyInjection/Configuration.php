@@ -18,7 +18,7 @@ class Configuration implements ConfigurationInterface
     public function getConfigTreeBuilder()
     {
         $treeBuilder = new TreeBuilder();
-        $treeBuilder->root('garlic_wrapper');
+        $treeBuilder->root('garlic_graphql_wrapper');
 
         return $treeBuilder;
     }
