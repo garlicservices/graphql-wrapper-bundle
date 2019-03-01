@@ -14,7 +14,7 @@ class QueryGenerator
      */
     public function createArguments(array $arguments)
     {
-        $argumentsStr = "(". substr(json_encode($this->arguments, JSON_UNESCAPED_UNICODE | JSON_NUMERIC_CHECK), 1, -1) .")";
+        $argumentsStr = "(". substr(json_encode($arguments, JSON_UNESCAPED_UNICODE | JSON_NUMERIC_CHECK), 1, -1) .")";
         return preg_replace('/"([^"]+)"\s*:\s*/', '$1:', $argumentsStr);
     }
     
