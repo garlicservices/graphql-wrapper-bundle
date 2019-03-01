@@ -14,18 +14,8 @@ class QueryGenerator
      */
     public function createArguments(array $arguments)
     {
-        $result = [];
-        foreach ($arguments as $name => $argument) {
-            if(is_array($argument)) {
-                $result[$name] = "$name: { " . $this->createArguments($argument) . " }";
-            } elseif(is_int($argument)) {
-                $result[] = "$name: $argument";
-            } else {
-                $result[] = "$name: \"$argument\"";
-            }
-        }
-        
-        return implode(',', $result);
+        $argumentsStr = "(". substr(json_encode($this->arguments, JSON_UNESCAPED_UNICODE | JSON_NUMERIC_CHECK), 1, -1) .")";
+        return preg_replace('/"([^"]+)"\s*:\s*/', '$1:', $argumentsStr);
     }
     
     /**
