@@ -127,12 +127,12 @@ class GraphQLService extends QueryHelper
         foreach ($this->requests as $serviceName => $request) {
             /** @var QueryBuilder $query */
             foreach ($request as $queryName => $query) {
+                $data = $result[$serviceName]->getData();
                 $query->setResult(
-                    isset($result['data'][$serviceName][$queryName]) ? $result['data'][$serviceName][$queryName] : null
+                    isset($data['data'][$queryName]) ? $data['data'][$queryName] : null
                 );
             }
         }
-
         return $this->stitchQueries();
     }
 
