@@ -177,7 +177,7 @@ class GraphQLService extends QueryHelper
                 $result['data'][$serviceName][$queryName] = $query->getArrayResult();
             }
         }
-
+        $this->requests = [];
         return $result;
     }
 
