@@ -131,6 +131,118 @@ $apartmentQuery
 $result = $graphQLService->fetch();
 ```
 
+### Querying external related objects using a deferred resolver
+Using deferred resolvers allows to getting relate data by one query after receiving the data of the base query, which solve the N + 1 problem.
+
+Suppose we have next GraphQL query:
+```json
+{
+  wallet {
+    WalletFind {
+      items {
+        id
+        amount
+        company {
+          id
+          title
+        }
+      }
+    }
+  }
+}
+```
+
+Where _company_ object is part of an external service, wich we'd like to get by one query to the external service.
+To solve this problem, we need:
+1. Create CompanyType, which we'd like use in our schema:
+   ```php
+    <?php
+    namespace App\GraphQL\DataSource\Type;
+    
+    use Youshido\GraphQL\Field\Field;
+    use Youshido\GraphQL\Type\Object\AbstractObjectType;
+    use Youshido\GraphQL\Type\Scalar\StringType;
+    
+    /**
+     * Class CompanyType
+     */
+    class CompanyType extends AbstractObjectType
+    {
+     public function build($config): void
+     {
+   $config->addField(new Field(['name' => 'id', 'type' => new StringType()]))
+    ->addField(new Field(['name' => 'title', 'type' => new StringType()]));
+     }
+    }
+   ```
+   
+2. Create CompanyDataSource, which we'd like use to get external data:
+    ```php
+    <?php
+    namespace App\GraphQL\DataSource;
+    
+    use \Garlic\Wrapper\Service\GraphQL\DataSource\AbstractDataSource;
+    
+    class CompanyDataSource extends AbstractDataSource
+    {
+        public function getQueryName(): string
+        {
+            return 'company.CompanyFind';
+        }
+    }
+    ```
+    We have to create _getQueryName()_ method that returns the name of the query to fetch the companies data.
+
+3. Create WalletCompanyRelation that implements _Garlic\Wrapper\Service\GraphQL\DataSource\DataSourceRelationInterface_ which returns a description of the relation between CompanySource and WalletType.  
+    ```php
+    <?php
+    
+    namespace App\GraphQL\DataSource;
+    
+    use App\Entity\Wallet;
+    use \Garlic\Wrapper\Service\GraphQL\DataSource\DataSourceRelationInterface;
+    
+    class WalletCompanyRelation implements DataSourceRelationInterface
+    {
+        /**
+         * @param Wallet $entity
+         *
+         * @return array
+         */
+        public function relation($entity): array
+        {
+            return ['id' => $entity->getCompanyId()];
+        }
+    }
+    ```
+4. Add the Company field to WalletType:
+    ```php
+    <?php
+    
+    namespace App\GraphQL\Type;
+    
+    use App\GraphQL\DataSource\CompanyDataSource;
+    use App\GraphQL\DataSource\WalletCompanyRelation;
+    use Garlic\Wrapper\Service\GraphQL\DataSource\DataSourceResolver;
+    use App\GraphQL\DataSource\Type\CompanyType;
+    use Garlic\GraphQL\Type\TypeAbstract;
+    use Youshido\GraphQL\Type\Scalar\FloatType;
+    use Youshido\GraphQL\Type\Scalar\IdType;
+    
+    class WalletType extends TypeAbstract
+    {
+        public function build($builder)
+        {
+            $builder->addField('id', new IdType())
+                ->addField('amount', new FloatType(), ['argument' => false])
+                ->addField('company', new CompanyType(), [
+                    'argument' => false,
+                    'resolve' => DataSourceResolver::build(CompanyDataSource::class, WalletCompanyRelation::class),
+                ]);
+        }  
+       //...
+    ```
+
 ### GraphQL mutations
 
 Mutation is the way to change service data by sending some kinds of query. What this queries are and how they could created read below.
