@@ -15,6 +15,12 @@
       "Garlic\\Wrapper\\": ""
     }
   },
+  "repositories": [
+    {
+      "type": "vcs",
+      "url": "https://github.com/egrik/helpers.git"
+    }
+  ],
   "require": {
     "php": ">=7.1",
     "garlic/bus": "1.*",
@@ -22,6 +28,8 @@
     "enqueue/enqueue-bundle": "^0.8",
     "enqueue/amqp-ext": "^0.8",
     "dflydev/dot-access-data": "^2.0",
-    "ext-json": "*"
+    "ext-json": "*",
+    "garlic/graphql": "^1.2",
+    "garlic/helpers": "^1.0"
   }
 }
