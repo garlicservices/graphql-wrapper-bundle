@@ -19,8 +19,6 @@
     "php": ">=7.1",
     "garlic/bus": "1.*",
     "jms/serializer-bundle": "^2.0",
-    "enqueue/enqueue-bundle": "^0.8",
-    "enqueue/amqp-ext": "^0.8",
     "dflydev/dot-access-data": "^2.0",
     "ext-json": "*"
   }
