@@ -19,6 +19,9 @@ abstract class AbstractQueryBuilder extends QueryGenerator
     /** @var string */
     protected $result;
 
+    /** @var array Request headers */
+    protected $headers = [];
+
     /**
      * QueryBuilder constructor.
      * @param string $query
@@ -174,6 +177,23 @@ abstract class AbstractQueryBuilder extends QueryGenerator
     public function getQueryName()
     {
         return $this->query;
+    }
+
+    /**
+     * @param $key
+     * @param $value
+     */
+    public function addHeader($key, $value)
+    {
+        $this->headers[$key] = $value;
+    }
+
+    /**
+     * @return array
+     */
+    public function getHeaders()
+    {
+        return $this->headers;
     }
 
     /**

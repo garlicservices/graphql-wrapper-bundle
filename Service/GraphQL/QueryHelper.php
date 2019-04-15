@@ -37,4 +37,19 @@ class QueryHelper
     {
         return array_keys($result) !== range(0, count($result) - 1);
     }
+
+    /**
+     * @param $requests
+     * @return array
+     */
+    public function mergeHeaders($requests)
+    {
+        $headers = [];
+        
+        foreach ($requests as $request) {
+            $headers = array_merge($headers, $request->getHeaders());
+        }
+        
+        return $headers;
+    }
 }
