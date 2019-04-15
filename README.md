@@ -29,7 +29,8 @@ $graphQLService = $this->get(GraphQLService::class);
 $addressQuery = $graphQLService->createQuery('serviceName.QueryName');
 $addressQuery
     ->select('id', 'city', 'zipcode')
-    ->where('country = Ukraine');
+    ->where('country = Ukraine')
+    ->addHeader('Authorization', 'abc');
 
 $result = $graphQLService->fetch();
 ````
