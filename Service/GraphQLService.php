@@ -24,6 +24,9 @@ class GraphQLService extends QueryHelper
     /** @var CommunicatorService CommunicatorService */
     private $communicatorService;
 
+    /** @var string */
+    private $jwtToken;
+
     /**
      * GraphQLService constructor.
      * @param CommunicatorService $communicatorService
@@ -141,13 +144,15 @@ class GraphQLService extends QueryHelper
      *
      * @return array
      */
-    public function fetch(): array
+    public function fetch($asAdmin = false): array
     {
+        $bearer = $asAdmin ? $this->getAdminJwtToken() : false;
+
         foreach ($this->requests as $serviceName => $request) {
             $result = $this->communicatorService
                 ->request($serviceName)
                 /** @var CommunicatorService::__call('graphql'), ... */
-                ->graphql([], ['query' => implode("\n", $request)])
+                ->graphql([], ['query' => implode("\n", $request)], $asAdmin ? ['Authorization' => $bearer] : [])
                 ->getData();
 
             /** @var QueryBuilder $query */
@@ -177,7 +182,9 @@ class GraphQLService extends QueryHelper
                 $result['data'][$serviceName][$queryName] = $query->getArrayResult();
             }
         }
+
         $this->requests = [];
+
         return $result;
     }
 
@@ -224,5 +231,28 @@ class GraphQLService extends QueryHelper
         $query->setResult($queryDataResults->export());
 
         return $query->getResult()->export();
+    }
+
+    /**
+     * @return string
+     */
+    public function getAdminJwtToken()
+    {
+        if (empty($this->jwtToken)) {
+            $meta = $this->parsQueryName('user.UserLogin');
+            $builder = new QueryBuilder($meta['query']);
+            $builder->select(['jwtToken'])
+                ->where(['email' => getenv('ADMIN_EMAIL'), 'plainPassword' => getenv('ADMIN_PASSWORD')]);
+
+            $result = $this->communicatorService
+                ->request('user')
+                /** @var CommunicatorService::__call('graphql'), ... */
+                ->graphql([], ['query' => $builder->getQuery()])
+                ->getData();
+
+            $this->jwtToken = $result['data']['UserLogin'][0]['jwtToken'];
+        }
+
+        return $this->jwtToken;
     }
 }
