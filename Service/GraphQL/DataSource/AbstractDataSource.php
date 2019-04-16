@@ -77,6 +77,13 @@ abstract class AbstractDataSource implements DataSourceInterface
         return array_unique(array_merge($fields, $this->getPrimaryKey()));
     }
 
+    protected function getWhereSource($where): array
+    {
+        return array_map(function($item) {
+            return array_unique(ArrayHelper::wrap($item));
+        }, array_merge_recursive(...$where));
+    }
+
     protected function getResponseRootPath(): string
     {
         return $this->packPath(['data', $this->getQueryName()]);
@@ -85,8 +92,8 @@ abstract class AbstractDataSource implements DataSourceInterface
     protected function fetch(array $fields): array
     {
         $this->graphQLService->createQuery($this->getQueryName())
-            ->select($this->getSelectSource($fields))
-            ->where(array_merge_recursive(...$this->buffer));
+                ->select($this->getSelectSource($fields))
+            ->where($this->getWhereSource($this->buffer));
 
         try {
             return $this->graphQLService->fetch();
