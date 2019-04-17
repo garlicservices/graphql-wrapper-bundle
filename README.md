@@ -29,8 +29,7 @@ $graphQLService = $this->get(GraphQLService::class);
 $addressQuery = $graphQLService->createQuery('serviceName.QueryName');
 $addressQuery
     ->select('id', 'city', 'zipcode')
-    ->where('country = Ukraine')
-    ->addHeader('Authorization', 'abc');
+    ->where('country = Ukraine');
 
 $result = $graphQLService->fetch();
 ````
@@ -131,6 +130,19 @@ $apartmentQuery
 
 $result = $graphQLService->fetch();
 ```
+
+#### Passing request headers
+You could pass any headers you want just by using `addHeader` method on created query:
+```php
+$graphQLService = $this->get(GraphQLService::class);
+
+$apartmentQuery = $graphQLService->createQuery('secondServiceName.QueryName');
+$apartmentQuery
+    ->select(...)
+    ->where(...)
+    ->addHeader('Authorization', 'abc');
+```
+
 
 ### GraphQL mutations
 
