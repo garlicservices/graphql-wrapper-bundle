@@ -59,7 +59,7 @@ abstract class AbstractDataSource implements DataSourceInterface
         return $this->result[$this->makePKByArgs($args)] ?? null;
     }
 
-    abstract public function getQueryName():string;
+    abstract public function getQueryName(): string;
 
     protected function clear(): void
     {
@@ -72,16 +72,16 @@ abstract class AbstractDataSource implements DataSourceInterface
         return ['id'];
     }
 
-    protected function getSelectSource(array $fields): array
+    protected function getRelatedFields(array $fields): array
     {
-        return array_unique(array_merge($fields, $this->getPrimaryKey()));
+        return array_values(array_unique(array_merge($fields, $this->getPrimaryKey())));
     }
 
-    protected function getWhereSource($where): array
+    protected function getRelatedConditions(): array
     {
-        return array_map(function($item) {
-            return array_unique(ArrayHelper::wrap($item));
-        }, array_merge_recursive(...$where));
+        return array_map(function ($item) {
+            return array_values(array_unique(ArrayHelper::wrap($item)));
+        }, array_merge_recursive(...$this->buffer));
     }
 
     protected function getResponseRootPath(): string
@@ -92,8 +92,8 @@ abstract class AbstractDataSource implements DataSourceInterface
     protected function fetch(array $fields): array
     {
         $this->graphQLService->createQuery($this->getQueryName())
-                ->select($this->getSelectSource($fields))
-            ->where($this->getWhereSource($this->buffer));
+            ->select($this->getRelatedFields($fields))
+            ->where($this->getRelatedConditions());
 
         try {
             return $this->graphQLService->fetch();
