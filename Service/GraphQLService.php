@@ -119,7 +119,13 @@ class GraphQLService extends QueryHelper
         foreach ($this->requests as $serviceName => $request) {
             /** @var QueryBuilder $query */
             foreach ($request as $queryName => $query) {
-                $this->communicatorService->pool($serviceName, 'graphql', [], ['query' => (string)$query]);
+                $this->communicatorService->pool(
+                    $serviceName,
+                    'graphql',
+                    [],
+                    ['query' => (string)$query],
+                    $query->getHeaders()
+                );
             }
         }
         $result = $this->communicatorService->fetch();
@@ -147,7 +153,11 @@ class GraphQLService extends QueryHelper
             $result = $this->communicatorService
                 ->request($serviceName)
                 /** @var CommunicatorService::__call('graphql'), ... */
-                ->graphql([], ['query' => implode("\n", $request)])
+                ->graphql(
+                    [],
+                    ['query' => implode("\n", $request)],
+                    $this->mergeHeaders($request)
+                )
                 ->getData();
 
             /** @var QueryBuilder $query */

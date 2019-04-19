@@ -131,6 +131,19 @@ $apartmentQuery
 $result = $graphQLService->fetch();
 ```
 
+#### Passing request headers
+You could pass any headers you want just by using `addHeader` method on created query:
+```php
+$graphQLService = $this->get(GraphQLService::class);
+
+$apartmentQuery = $graphQLService->createQuery('secondServiceName.QueryName');
+$apartmentQuery
+    ->select(...)
+    ->where(...)
+    ->addHeader('Authorization', 'abc');
+```
+
+
 ### GraphQL mutations
 
 Mutation is the way to change service data by sending some kinds of query. What this queries are and how they could created read below.
